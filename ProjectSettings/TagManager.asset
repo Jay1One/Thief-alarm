@@ -41,3 +41,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Player
+    uniqueID: 906533303
+    locked: 0
+  - name: WalkBehind
+    uniqueID: 4208430739
+    locked: 0
