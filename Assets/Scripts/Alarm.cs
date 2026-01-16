@@ -1,66 +1,72 @@
+
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
-[RequireComponent(typeof(Collider2D))]
 public class Alarm : MonoBehaviour
 {
     [SerializeField] private float _maxVolume;
     [SerializeField] private float _timeForMaxVolume;
+    [SerializeField] private PlayerDetector _playerDetector;
 
     private float _volumeChangeSpeed;
     private AudioSource _audioSource;
     private float _currentVolume;
-    private Player _player;
     private bool _isPlaying;
+    private bool _isStopping;
+
 
     private void Awake()
     {
         _audioSource = GetComponent<AudioSource>();
         _volumeChangeSpeed = _maxVolume / _timeForMaxVolume;
     }
-
-    private void Update()
+    
+    public void Play()
     {
-        if (_player == null)
+        if (!_isPlaying)
         {
-            _currentVolume = Mathf.MoveTowards(_currentVolume,
-                0f, _volumeChangeSpeed * Time.deltaTime);
-            
-            if (_currentVolume==0f && _isPlaying)
-            {
-                _audioSource.Stop();
-                _isPlaying = false;
-            }
+            StartCoroutine(PlayCoroutine());
         }
         
         else
         {
-            _currentVolume = Mathf.MoveTowards(_currentVolume,
-                _maxVolume, _volumeChangeSpeed * Time.deltaTime);
+            _isStopping = false;
         }
+    }
+
+    public void StopWithFade()
+    {
+        _isStopping = true;
+    }
+    
+    private IEnumerator PlayCoroutine()
+    {
+        _isPlaying = true;
+        _audioSource.Play();
         
-        _audioSource.volume = _currentVolume;
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.TryGetComponent<Player>(out var player))
+        do
         {
-            if (!_isPlaying)
+            if (_isStopping)
             {
-                _audioSource.Play();
-                _isPlaying = true;
+                _currentVolume = Mathf.MoveTowards(_currentVolume,
+                    0f, _volumeChangeSpeed * Time.deltaTime);
             }
+        
+            else
+            {
+                _currentVolume = Mathf.MoveTowards(_currentVolume,
+                    _maxVolume, _volumeChangeSpeed * Time.deltaTime);
+            }
+        
+            _audioSource.volume = _currentVolume;
             
-            _player = player;
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.GetComponent<Player>())
-        {
-            _player = null;
-        }
+            yield return null;
+        } 
+        while (_currentVolume>0f);
+        
+        _audioSource.Stop();
+        _isStopping = false;
+        _isPlaying = false;
     }
 }
