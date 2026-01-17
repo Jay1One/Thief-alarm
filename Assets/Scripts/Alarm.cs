@@ -12,8 +12,8 @@ public class Alarm : MonoBehaviour
     private float _volumeChangeSpeed;
     private AudioSource _audioSource;
     private float _currentVolume;
+    private Coroutine _currentCoroutine;
     private bool _isPlaying;
-    private bool _isStopping;
 
 
     private void Awake()
@@ -24,49 +24,56 @@ public class Alarm : MonoBehaviour
     
     public void Play()
     {
-        if (!_isPlaying)
+        if (_currentCoroutine!=null)
         {
-            StartCoroutine(PlayCoroutine());
+            StopCoroutine(_currentCoroutine);
         }
         
-        else
-        {
-            _isStopping = false;
-        }
+        _currentCoroutine = StartCoroutine(PlayCoroutine());
     }
 
     public void StopWithFade()
     {
-        _isStopping = true;
+        if (_currentCoroutine!=null)
+        {
+            StopCoroutine(_currentCoroutine);
+        }
+        
+        _currentCoroutine = StartCoroutine(FadeCoroutine());
     }
     
     private IEnumerator PlayCoroutine()
     {
-        _isPlaying = true;
-        _audioSource.Play();
-        
-        do
+        if (!_isPlaying)
         {
-            if (_isStopping)
-            {
-                _currentVolume = Mathf.MoveTowards(_currentVolume,
-                    0f, _volumeChangeSpeed * Time.deltaTime);
-            }
+            _audioSource.Play();
+            _isPlaying = true;
+        }
         
-            else
-            {
-                _currentVolume = Mathf.MoveTowards(_currentVolume,
-                    _maxVolume, _volumeChangeSpeed * Time.deltaTime);
-            }
-        
+        while (_currentVolume < _maxVolume)
+        {
+            _currentVolume = Mathf.MoveTowards(_currentVolume,
+                _maxVolume, _volumeChangeSpeed * Time.deltaTime);
+            
             _audioSource.volume = _currentVolume;
             
             yield return null;
-        } 
-        while (_currentVolume>0f);
+        }
+    }
+
+    private IEnumerator FadeCoroutine()
+    {
+        while (_currentVolume > 0f)
+        {
+            _currentVolume = Mathf.MoveTowards(_currentVolume,
+                0f, _volumeChangeSpeed * Time.deltaTime);
+            
+            _audioSource.volume = _currentVolume;
+            
+            yield return null;
+        }
         
         _audioSource.Stop();
-        _isStopping = false;
         _isPlaying = false;
     }
 }

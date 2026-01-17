@@ -21,7 +21,7 @@ public class PlayerDetector : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if (other.GetComponent<Player>())
+        if (other.TryGetComponent<Player>(out var player))
         {
             _player = null;
             OnPlayerLost?.Invoke(_player);
